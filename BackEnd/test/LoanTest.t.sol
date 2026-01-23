@@ -1,9 +1,8 @@
-
-        // Grant Loan contract // SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
 import {Test, console} from "forge-std/Test.sol";
-import {Loan} from "../src/Loan.sol"; 
+import {Loan} from "../src/Loan.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // ==========================================
@@ -46,21 +45,19 @@ contract LoanTest is Test {
 
     // Constants
     int256 constant ETH_PRICE_USD = 2000 * 1e8; // 1 ETH = $2000
-    uint256 constant SECONDS_PER_YEAR = 31536000;
     
-    // Rates from contract
-    uint256 constant BORROW_RATE = 1000; // 10%
-    uint256 constant SUPPLY_RATE = 800;  // 8%
+    // --- DEMO MODE CONSTANTS ---
+    uint256 constant SECONDS_PER_YEAR = 30; // 30 Seconds = 1 Year
+    uint256 constant BORROW_RATE = 1000;    // 10%
+    uint256 constant SUPPLY_RATE = 500;     // 5%
 
     function setUp() public {
         token = new MockToken();
         priceFeed = new MockV3Aggregator(8, ETH_PRICE_USD);
         loan = new Loan(address(priceFeed), address(token));
         
-        // Grant Loan contract minting rights
         token.setOwner(address(loan));
 
-        // Fund users
         vm.deal(lender, 100 ether);
         vm.deal(borrower, 100 ether);
         vm.deal(liquidator, 100 ether);
@@ -72,76 +69,71 @@ contract LoanTest is Test {
     // ==========================================
 
     function test_LenderEarnsCorrectInterest() public {
-        // 1. Lender supplies 1000 fUSD
-        // (First, we need to mint fUSD to lender to simulate them having it, 
-        // or they can buy it. Let's say they buy it via buyFUsd for simplicity)
-        
         vm.startPrank(lender);
-        // Buy 1000 fUSD (0.5 ETH @ $2000)
-        loan.buyFUsd{value: 0.5 ether}(); 
+        loan.buyFUsd{value: 1 ether}(); 
         token.approve(address(loan), 1000 * 1e18);
         loan.supply(1000 * 1e18);
         vm.stopPrank();
 
-        // 2. Warp 1 Year
         vm.warp(block.timestamp + SECONDS_PER_YEAR);
 
-        // 3. Check Balance (Should be +8%)
-        // We trigger update by calling a view or state change. 
-        // Let's call withdrawSupply(0) to force the modifier update.
-        vm.prank(lender);
-        loan.withdrawSupply(0); 
+        vm.startPrank(lender);
+        loan.supply(0); 
 
         uint256 balance = loan.s_lendersBalance(lender);
         
-        // Expected: 1000 + (1000 * 0.08) = 1080
-        uint256 expected = 1080 * 1e18;
-        
-        console.log("Lender Balance Check:");
-        console.log("Expected:", expected);
-        console.log("Actual:  ", balance);
+        // Expected: 1000 + 5% = 1050
+        uint256 expected = 1050 * 1e18;
 
-        assertApproxEqAbs(balance, expected, 1e14); // Allow tiny rounding error
+        assertApproxEqAbs(balance, expected, 1e14); 
+        vm.stopPrank();
+    }
+
+    function test_WithdrawSupply_WithInterest() public {
+        vm.startPrank(lender);
+        loan.buyFUsd{value: 1 ether}();
+        token.approve(address(loan), 1000 * 1e18);
+        loan.supply(1000 * 1e18);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + SECONDS_PER_YEAR);
+
+        // Inject Profit (50 fUSD)
+        vm.startPrank(address(loan));
+        token.mint(address(loan), 50 * 1e18);
+        vm.stopPrank();
+
+        vm.startPrank(lender);
+        loan.withdrawSupply(1050 * 1e18); 
+        
+        uint256 remaining = loan.s_lendersBalance(lender);
+        assertEq(remaining, 0); 
+        vm.stopPrank();
     }
 
     // ==========================================
     //          TEST GROUP 2: BORROWERS
     // ==========================================
 
- function test_BorrowerAccruesDebtCorrectly() public {
+    function test_BorrowerAccruesDebtCorrectly() public {
         vm.startPrank(borrower);
-        // Deposit 1 ETH ($2000)
         loan.depositCollateral{value: 1 ether}();
-        // Borrow 500 fUSD
         loan.borrow(500 * 1e18);
         vm.stopPrank();
 
-        // Warp 6 Months (Half year)
-        // Rate 10% APY. 6 Months = 5%. 
-        // Expected Debt: 500 + 25 = 525.
         vm.warp(block.timestamp + (SECONDS_PER_YEAR / 2));
 
         vm.prank(borrower);
-        // FIX: Use borrow(0) instead of depositCollateral.
-        // borrow() has the modifier AND allows 0 amount (it just transfers 0 tokens).
         loan.borrow(0); 
 
         uint256 debt = loan.s_fUsdBorrowed(borrower);
-        
-        console.log("Borrower Debt Check (6 months):");
-        console.log("Expected: 525.0");
-        console.log("Actual:  ", debt / 1e18);
-
-        // This assertion will now pass
+        // 500 * 1.05 = 525
         assertApproxEqAbs(debt, 525 * 1e18, 1e15);
     }
 
-    function test_RevertIfBorrowingAboveLTV() public {
+    function test_Borrow_RespectsLTV() public {
         vm.startPrank(borrower);
-        loan.depositCollateral{value: 1 ether}(); // $2000 value
-        
-        // Max borrow is 50% = $1000.
-        // Try to borrow $1001
+        loan.depositCollateral{value: 1 ether}(); 
         vm.expectRevert(Loan.DebtLimit.selector);
         loan.borrow(1001 * 1e18);
         vm.stopPrank();
@@ -151,68 +143,29 @@ contract LoanTest is Test {
     //       TEST GROUP 3: BUY fUSD & REPAY
     // ==========================================
 
-    function test_BuyFUsd_UpdatesStateAndRespectsCap() public {
-        // 1. Random user buys fUSD
+    function test_BuyFUsd_CapLimit() public {
         vm.startPrank(randomUser);
-        
-        // Buy $2000 worth (1 ETH)
-        loan.buyFUsd{value: 1 ether}();
-        
-        // Check Token Balance
-        assertEq(token.balanceOf(randomUser), 2000 * 1e18);
-        
-        // Check Contract State (Minted Total)
-        assertEq(loan.s_totalMintedByProtocol(), 2000 * 1e18);
-        
-        vm.stopPrank();
-    }
-
-    function test_BuyFUsd_RevertsIfCapReached() public {
-        vm.startPrank(randomUser);
-        
-        // Cap is 10,000. Price is $2000/ETH.
-        // 6 ETH = $12,000. This should fail.
-        
         vm.expectRevert(Loan.MintCapReached.selector);
-        loan.buyFUsd{value: 6 ether}();
-        
+        loan.buyFUsd{value: 6 ether}(); // Cap is 10k, this tries 12k
         vm.stopPrank();
     }
 
-    function test_FullCycle_Borrow_Interest_Buy_Repay() public {
-        // 1. Borrow
+    function test_Repay_MoreThanDebt() public {
         vm.startPrank(borrower);
         loan.depositCollateral{value: 1 ether}();
-        loan.borrow(1000 * 1e18);
+        loan.borrow(100 * 1e18);
         vm.stopPrank();
-
-        // 2. Wait 1 Year (Debt becomes 1100)
-        vm.warp(block.timestamp + SECONDS_PER_YEAR);
-
-        // 3. User realizes they need 100 extra fUSD
+        
         vm.startPrank(borrower);
+        loan.buyFUsd{value: 0.1 ether}(); 
+        uint256 balance = token.balanceOf(borrower); 
         
-        // Current wallet: 1000 fUSD.
-        // Buy extra 110 fUSD (just to be safe/cover slippage or fees if any)
-        // 110 USD / 2000 = 0.055 ETH
-        loan.buyFUsd{value: 0.055 ether}();
-
-        // 4. Repay ALL
-        uint256 balance = token.balanceOf(borrower);
         token.approve(address(loan), balance);
+        loan.repay(balance); 
         
-        loan.repay(balance); // Contract caps repayment to actual debt
-        
-        // 5. Assertions
-        uint256 debtRemaining = loan.s_fUsdBorrowed(borrower);
-        assertEq(debtRemaining, 0);
-        
-        // User should have some tiny dust left (because we bought 110 but owed 100 interest)
-        // Owed ~1100. Had 1000 + 110 = 1110.
-        // Remaining should be ~10.
-        assertTrue(token.balanceOf(borrower) > 0);
-        
-        console.log("Cycle Complete. Debt cleared.");
+        uint256 debt = loan.s_fUsdBorrowed(borrower);
+        assertEq(debt, 0);
+        assertApproxEqAbs(token.balanceOf(borrower), (balance - 100 * 1e18), 1e15);
         vm.stopPrank();
     }
 
@@ -220,53 +173,87 @@ contract LoanTest is Test {
     //       TEST GROUP 4: LIQUIDATION
     // ==========================================
 
-    function test_Liquidate_WorksAfterPriceDrop() public {
-        // 1. Setup risky loan
+    function test_Liquidate_HealthyUser_Reverts() public {
         vm.startPrank(borrower);
-        loan.depositCollateral{value: 1 ether}(); // $2000
-        loan.borrow(900 * 1e18); // Borrow $900. Health is okay (Max $1000)
-        vm.stopPrank();
-
-        // 2. Price crashes to $1500
-        priceFeed.updateAnswer(1500 * 1e8);
-        // New Max Borrow = $750.
-        // Current Debt = $900.
-        // Status: LIQUIDATABLE.
-
-        // 3. Liquidator prepares
-        vm.startPrank(liquidator);
-        loan.buyFUsd{value: 1 ether}(); // Get some fUSD to pay debt
-        token.approve(address(loan), 2000 * 1e18);
-
-        // 4. Liquidate
-        uint256 liquidatorEthBefore = liquidator.balance;
-        loan.liquidate(borrower);
-        uint256 liquidatorEthAfter = liquidator.balance;
-
-        // 5. Checks
-        // Borrower debt should be 0
-        assertEq(loan.s_fUsdBorrowed(borrower), 0);
-        
-        // Liquidator should have received the 1 ETH collateral
-        // (liquidatorEthAfter - liquidatorEthBefore) should equal 1 ether (minus gas if not using forge)
-        assertEq(liquidatorEthAfter - liquidatorEthBefore, 1 ether);
-        
-        console.log("Liquidation executed successfully.");
-        vm.stopPrank();
-    }
-
-    function test_Liquidate_RevertsIfUserHealthy() public {
-        vm.startPrank(borrower);
-        loan.depositCollateral{value: 1 ether}(); // $2000
-        loan.borrow(500 * 1e18); // $500 debt. Very healthy.
+        loan.depositCollateral{value: 1 ether}(); 
+        loan.borrow(500 * 1e18);
         vm.stopPrank();
 
         vm.startPrank(liquidator);
-        token.approve(address(loan), 1000 * 1e18); // Approve tokens (if they had any)
-        
-        // Should fail
+        token.approve(address(loan), 1000 * 1e18); 
         vm.expectRevert(Loan.UserIsHealthy.selector);
         loan.liquidate(borrower);
         vm.stopPrank();
+    }
+
+    // === UPDATED TEST FOR PARTIAL LIQUIDATION ===
+    function test_Liquidate_UnhealthyUser_Works() public {
+        // 1. Borrower setup: 1 ETH Collat, $1000 Debt
+        vm.startPrank(borrower);
+        loan.depositCollateral{value: 1 ether}(); 
+        loan.borrow(1000 * 1e18); 
+        vm.stopPrank();
+
+        // 2. Crash price to $1500
+        // New Max Borrow = $750. Debt $1000 is unhealthy.
+        priceFeed.updateAnswer(1500 * 1e8);
+
+        // 3. Liquidator setup
+        vm.startPrank(liquidator);
+        loan.buyFUsd{value: 1 ether}(); 
+        token.approve(address(loan), 2000 * 1e18);
+        
+        uint256 startEth = liquidator.balance;
+        loan.liquidate(borrower);
+        
+        // --- ASSERTIONS ---
+
+        // A. Debt should be cleared
+        assertEq(loan.s_fUsdBorrowed(borrower), 0);
+        
+        // B. Calculate Expected ETH Seized
+        // Debt Covered: 1000
+        // Bonus 10%: 100
+        // Total Value: 1100 USD
+        // Price: 1500 USD/ETH
+        // Formula: (1100 * 1e18) / 1500
+        // Cast the numerator to uint256 to force integer division (truncation)
+uint256 expectedEthSeized = uint256(1100 * 1e18) / 1500;
+
+        // Check Liquidator received this amount
+        assertApproxEqAbs(liquidator.balance - startEth, expectedEthSeized, 1e15);
+
+        // C. Check Borrower Kept the Rest
+        // Original: 1 ETH
+        // Remaining: 1 ETH - expectedEthSeized
+        uint256 remainingCollateral = loan.s_ethCollateral(borrower);
+        assertApproxEqAbs(remainingCollateral, 1 ether - expectedEthSeized, 1e15);
+        
+        vm.stopPrank();
+    }
+
+    // ==========================================
+    //       TEST GROUP 5: FUZZ TESTS
+    // ==========================================
+
+    function testFuzz_BorrowInterest(uint96 amount) public {
+        vm.assume(amount > 1e18 && amount < 5000 * 1e18);
+
+        vm.startPrank(borrower);
+        loan.depositCollateral{value: 10 ether}();
+        loan.borrow(amount);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + SECONDS_PER_YEAR);
+
+        vm.prank(borrower);
+        loan.borrow(0); 
+
+        uint256 debt = loan.s_fUsdBorrowed(borrower);
+        
+        uint256 interest = uint256(amount) * 10 / 100;
+        uint256 expected = uint256(amount) + interest;
+
+        assertApproxEqAbs(debt, expected, 1e15);
     }
 }

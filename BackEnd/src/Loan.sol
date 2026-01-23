@@ -17,17 +17,23 @@ contract Loan {
     AggregatorV3Interface public priceFeed;
     Token public i_fUsd;
 
-    // Interest Rate Constants (Basis Points: 1000 = 10%)
+    // --- DEMO CONFIGURATION ---
     uint256 public constant BORROW_RATE_BPS = 1000; // 10% APY
-    uint256 public constant SUPPLY_RATE_BPS = 800;  // 8% APY
-    uint256 public constant SECONDS_PER_YEAR = 31536000;
+    uint256 public constant SUPPLY_RATE_BPS = 500;  // 5% APY
+    
+    // DEMO TIME: 30 Seconds = 1 Year
+    uint256 public constant SECONDS_PER_YEAR = 30; 
+
+    // LIQUIDATION BONUS: 10%
+    // This dictates how much extra collateral the liquidator gets
+    uint256 public constant LIQUIDATION_BONUS = 10; 
 
     // Mappings
     mapping (address => uint256) public s_ethCollateral;
     mapping (address => uint256) public s_fUsdBorrowed;
     mapping (address => uint256) public s_lendersBalance;
     
-    // Track timestamps for interest calculations
+    // Track timestamps
     mapping (address => uint256) public s_lastBorrowTimestamp;
     mapping (address => uint256) public s_lastSupplyTimestamp;
 
@@ -41,7 +47,6 @@ contract Loan {
     event Supply(address indexed lender, uint256 amount);
     event WithdrawSupply(address indexed lender, uint256 amount);
     event Liquidated(address indexed user, address indexed liquidator);
-    // New Event
     event FUsdBought(address indexed buyer, uint256 ethAmount, uint256 fUsdAmount); 
 
     constructor(address _priceFeedAddress, address _tokenAddress) {
@@ -49,7 +54,7 @@ contract Loan {
         i_fUsd = Token(_tokenAddress);
     }
 
-    // --- MODIFIERS (Interest Logic) ---
+    // --- MODIFIERS ---
 
     modifier updateBorrowInterest(address user) {
         uint256 interest = calculateInterest(
@@ -79,30 +84,18 @@ contract Loan {
 
     // --- EXTERNAL FUNCTIONS ---
 
-    // === NEW FUNCTION ===
-    // Allows anyone to swap ETH for fUSD directly. 
-    // This provides the liquidity needed to pay off interest.
     function buyFUsd() public payable {
         require(msg.value > 0, "Must send ETH");
-
-        // 1. Calculate how much fUSD their ETH is worth
         uint256 ethValueInUsd = getEthValue(msg.value);
         
-        // 2. Check if minting this amount hits the cap
         if(s_totalMintedByProtocol + ethValueInUsd > MINT_CAP) {
             revert MintCapReached();
         }
 
-        // 3. Update State
         s_totalMintedByProtocol += ethValueInUsd;
-
-        // 4. Mint tokens to buyer
-        // The contract keeps the ETH as a reserve (backing the new tokens)
         i_fUsd.mint(msg.sender, ethValueInUsd);
-
         emit FUsdBought(msg.sender, msg.value, ethValueInUsd);
     }
-    // ====================
 
     function supply(uint256 amount) external updateSupplyInterest(msg.sender) {
         bool success = i_fUsd.transferFrom(msg.sender, address(this), amount);
@@ -119,7 +112,6 @@ contract Loan {
         if(contractBalance < amount) revert InsufficientSupply();
 
         s_lendersBalance[msg.sender] -= amount;
-        
         bool success = i_fUsd.transfer(msg.sender, amount);
         if(!success) revert TransferFailed();
 
@@ -141,10 +133,8 @@ contract Loan {
         }
 
         uint256 currentLiquidity = i_fUsd.balanceOf(address(this));
-        
         if (amountToBorrow > currentLiquidity) {
             uint256 deficit = amountToBorrow - currentLiquidity;
-        
             if(s_totalMintedByProtocol + deficit > MINT_CAP) {
                 revert MintCapReached();
             }
@@ -153,7 +143,6 @@ contract Loan {
         }
 
         s_fUsdBorrowed[msg.sender] += amountToBorrow;
-  
         bool success = i_fUsd.transfer(msg.sender, amountToBorrow);
         if(!success) revert TransferFailed();
 
@@ -162,7 +151,6 @@ contract Loan {
 
     function repay(uint256 amountToRepay) public updateBorrowInterest(msg.sender) {
         uint256 currentDebt = s_fUsdBorrowed[msg.sender];
-        
         if (amountToRepay > currentDebt) {
             amountToRepay = currentDebt; 
         }
@@ -171,10 +159,10 @@ contract Loan {
         if (!success) revert TransferFailed();
 
         s_fUsdBorrowed[msg.sender] -= amountToRepay;
-        
         emit Repay(msg.sender, amountToRepay);
     }
 
+    // === UPDATED LIQUIDATION LOGIC ===
     function liquidate(address user) external updateBorrowInterest(user) {
         uint256 totalCollateralValueInUsd = getEthValue(s_ethCollateral[user]);
         uint256 userDebt = s_fUsdBorrowed[user];
@@ -184,15 +172,31 @@ contract Loan {
             revert UserIsHealthy();
         }
 
+        // 1. Calculate Debt + Bonus
+        uint256 tokenAmountToCover = userDebt;
+        uint256 bonusAmount = (tokenAmountToCover * LIQUIDATION_BONUS) / 100;
+        uint256 totalValueToSeizeInUsd = tokenAmountToCover + bonusAmount;
+
+        // 2. Convert to ETH
+        // Formula: (USD * 1e18) / Price
+        uint256 currentPrice = getLatestPrice(); 
+        uint256 ethToSeize = (totalValueToSeizeInUsd * 1e18) / currentPrice;
+
+        // Safety: Cannot seize more than they have
+        if(ethToSeize > s_ethCollateral[user]) {
+            ethToSeize = s_ethCollateral[user];
+        }
+
+        // 3. Take Payment from Liquidator
         bool success = i_fUsd.transferFrom(msg.sender, address(this), userDebt);
         if (!success) revert TransferFailed();
 
-        uint256 collateralToSeize = s_ethCollateral[user];
-    
+        // 4. Update Balances
         s_fUsdBorrowed[user] = 0;
-        s_ethCollateral[user] = 0;
+        s_ethCollateral[user] -= ethToSeize; // User keeps the remainder!
 
-        (bool sent, ) = payable(msg.sender).call{value: collateralToSeize}("");
+        // 5. Send Reward to Liquidator
+        (bool sent, ) = payable(msg.sender).call{value: ethToSeize}("");
         if (!sent) {
             revert TransferFailed();
         }
@@ -204,7 +208,6 @@ contract Loan {
 
     function calculateInterest(uint256 principal, uint256 rateBps, uint256 lastTime) public view returns (uint256) {
         if (lastTime == 0 || principal == 0) return 0;
-        
         uint256 timeElapsed = block.timestamp - lastTime;
         return (principal * rateBps * timeElapsed) / (SECONDS_PER_YEAR * 10000);
     }
@@ -216,5 +219,10 @@ contract Loan {
 
     function getEthValue(uint256 ethAmount) public view returns (uint256) {
         return (ethAmount * getLatestPrice()) / 1e18;
+    }
+
+    function getSecondsElapsed(address user) public view returns (uint256) {
+        if (s_lastBorrowTimestamp[user] == 0) return 0;
+        return block.timestamp - s_lastBorrowTimestamp[user];
     }
 }
