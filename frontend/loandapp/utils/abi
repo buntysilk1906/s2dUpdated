@@ -1,0 +1,30 @@
+// utils/abi.js
+
+// 1. REPLACE WITH YOUR DEPLOYED CONTRACT ADDRESSES
+export const LOAN_CONTRACT_ADDRESS = "0x..."; // <--- PUT YOUR LOAN CONTRACT ADDRESS HERE
+export const TOKEN_CONTRACT_ADDRESS = "0x..."; // <--- PUT YOUR TOKEN CONTRACT ADDRESS HERE
+
+// 2. The Exact Interface for your Loan.sol
+export const LOAN_ABI = [
+  // Read Functions
+  "function s_ethCollateral(address) view returns (uint256)",
+  "function s_fUsdBorrowed(address) view returns (uint256)",
+  "function s_lendersBalance(address) view returns (uint256)",
+  "function getEthValue(uint256 ethAmount) public view returns (uint256)",
+  
+  // Write Functions
+  "function buyFUsd() public payable",
+  "function depositCollateral() public payable",
+  "function borrow(uint256 amountToBorrow) public",
+  "function repay(uint256 amountToRepay) public",
+  "function supply(uint256 amount) external",
+  "function withdrawSupply(uint256 amount) external",
+  "function liquidate(address user) external"
+];
+
+// 3. Standard ERC20 Interface for your Token.sol
+export const TOKEN_ABI = [
+  "function balanceOf(address account) view returns (uint256)",
+  "function approve(address spender, uint256 amount) public returns (bool)",
+  "function allowance(address owner, address spender) view returns (uint256)"
+];
