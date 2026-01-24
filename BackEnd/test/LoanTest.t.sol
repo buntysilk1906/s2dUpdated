@@ -256,4 +256,27 @@ uint256 expectedEthSeized = uint256(1100 * 1e18) / 1500;
 
         assertApproxEqAbs(debt, expected, 1e15);
     }
+    function test_WithdrawCollateral_Success() public {
+        vm.startPrank(borrower);
+
+        // 1. Setup: User deposits 1 ETH
+        loan.depositCollateral{value: 1 ether}();
+        
+        // Snapshot the user's wallet balance before withdrawing
+        uint256 balanceBefore = address(borrower).balance;
+
+        // 2. Action: User withdraws 0.5 ETH
+        loan.withdrawCollateral(0.5 ether);
+
+        // 3. Assertions
+        uint256 balanceAfter = address(borrower).balance;
+        
+        // Check A: User wallet increased by exactly 0.5 ETH
+        assertEq(balanceAfter, balanceBefore + 0.5 ether);
+
+        // Check B: Contract mapping updated correctly (1.0 - 0.5 = 0.5 remaining)
+        assertEq(loan.s_ethCollateral(borrower), 0.5 ether);
+
+        vm.stopPrank();
+    }
 }

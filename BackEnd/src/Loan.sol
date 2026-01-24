@@ -225,4 +225,28 @@ contract Loan {
         if (s_lastBorrowTimestamp[user] == 0) return 0;
         return block.timestamp - s_lastBorrowTimestamp[user];
     }
+
+    function withdrawCollateral(uint256 amount) external {
+        // 1. Check if user has enough collateral
+        require(s_ethCollateral[msg.sender] >= amount, "Insufficient Collateral");
+
+        // 2. Check if withdrawing this amount would make them unhealthy (undercollateralized)
+        //    (Only necessary if they still have some debt remaining)
+        uint256 collateralRemaining = s_ethCollateral[msg.sender] - amount;
+        uint256 collateralValueInUsd = getEthValue(collateralRemaining);
+        uint256 maxBorrow = collateralValueInUsd / 2;
+        
+        if (s_fUsdBorrowed[msg.sender] > maxBorrow) {
+            revert DebtLimit(); // Cannot withdraw if it makes you unhealthy
+        }
+
+        // 3. Update state
+        s_ethCollateral[msg.sender] -= amount;
+
+        // 4. Send ETH back to user
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        if (!success) revert TransferFailed();
+
+        emit Deposit(msg.sender, amount); // You might want to create a new "WithdrawCollateral" event
+    }
 }
