@@ -1,0 +1,292 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 10%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 185 100% 50%;
+    --primary-foreground: 222 47% 6%;
+
+    --secondary: 270 91% 65%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 222 30% 15%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 270 91% 65%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 6%;
+
+    --border: 222 30% 18%;
+    --input: 222 30% 15%;
+    --ring: 185 100% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 222 47% 8%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 185 100% 50%;
+    --sidebar-primary-foreground: 222 47% 6%;
+    --sidebar-accent: 222 30% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 222 30% 18%;
+    --sidebar-ring: 185 100% 50%;
+
+    /* Custom DeFi gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(185 100% 50%) 0%, hsl(270 91% 65%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 10%) 0%, hsl(222 47% 6%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(185 100% 50% / 0.15) 0%, transparent 70%);
+    --gradient-accent: linear-gradient(90deg, hsl(185 100% 50%) 0%, hsl(160 100% 45%) 100%);
+
+    /* Glassmorphism */
+    --glass-bg: hsl(222 47% 10% / 0.7);
+    --glass-border: hsl(185 100% 50% / 0.2);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', sans-serif;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/70 backdrop-blur-xl border border-primary/20 rounded-xl;
+    box-shadow: 0 8px 32px hsl(185 100% 50% / 0.1),
+                inset 0 1px 0 hsl(185 100% 50% / 0.1);
+  }
+
+  .glass-button {
+    @apply relative overflow-hidden transition-all duration-300;
+    background: linear-gradient(145deg, hsl(222 47% 12%), hsl(222 47% 8%));
+    box-shadow: 0 4px 15px hsl(185 100% 50% / 0.2);
+  }
+
+  .glass-button:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px hsl(185 100% 50% / 0.3);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px hsl(185 100% 50% / 0.5),
+                 0 0 40px hsl(185 100% 50% / 0.3);
+  }
+
+  .glow-border {
+    box-shadow: 0 0 20px hsl(185 100% 50% / 0.3),
+                inset 0 0 20px hsl(185 100% 50% / 0.1);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: var(--gradient-primary);
+  }
+
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+
+  .hover-glow:hover {
+    box-shadow: 0 0 30px hsl(185 100% 50% / 0.4);
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  .animate-gradient {
+    background-size: 200% 200%;
+    animation: gradientShift 3s ease infinite;
+  }
+
+  .nav-link {
+    @apply relative px-4 py-2 rounded-lg transition-all duration-300;
+  }
+
+  .nav-link::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 w-0 h-0.5 bg-primary transition-all duration-300;
+    transform: translateX(-50%);
+  }
+
+  .nav-link:hover::after {
+    @apply w-3/4;
+  }
+
+  .nav-link:hover {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .stat-card {
+    @apply glass-card p-6 hover-glow cursor-pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    border-color: hsl(185 100% 50% / 0.5);
+  }
+
+  .feature-card {
+    @apply glass-card p-8 text-center cursor-pointer;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .feature-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: hsl(185 100% 50% / 0.6);
+    box-shadow: 0 20px 40px hsl(185 100% 50% / 0.2);
+  }
+
+  .market-row {
+    @apply glass-card p-4 mb-3 cursor-pointer;
+    transition: all 0.3s ease;
+  }
+
+  .market-row:hover {
+    @apply bg-card border-primary/40;
+    transform: translateX(8px);
+  }
+
+  .chart-container {
+    @apply glass-card p-6 overflow-hidden;
+  }
+
+  .action-button {
+    @apply relative overflow-hidden font-semibold py-3 px-8 rounded-xl transition-all duration-300;
+    background: var(--gradient-primary);
+  }
+
+  .action-button::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, hsl(185 100% 60%) 0%, hsl(270 91% 75%) 100%);
+  }
+
+  .action-button:hover::before {
+    @apply opacity-100;
+  }
+
+  .action-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px hsl(185 100% 50% / 0.4);
+  }
+
+  .action-button span {
+    @apply relative z-10;
+  }
+
+  .pathway-card {
+    @apply glass-card p-8 cursor-pointer text-center;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .pathway-card:hover {
+    transform: scale(1.03);
+    border-color: hsl(185 100% 50% / 0.6);
+    box-shadow: 0 0 40px hsl(185 100% 50% / 0.3);
+  }
+}
+
+@layer utilities {
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% { 
+      box-shadow: 0 0 20px hsl(185 100% 50% / 0.3);
+    }
+    50% { 
+      box-shadow: 0 0 40px hsl(185 100% 50% / 0.6);
+    }
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes slideIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(30px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0; 
+      transform: scale(0.9); 
+    }
+    to { 
+      opacity: 1; 
+      transform: scale(1); 
+    }
+  }
+
+  @keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+}
