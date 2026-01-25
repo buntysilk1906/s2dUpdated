@@ -1,11 +1,10 @@
-// SPDX-License-Identifier: MIT
+//SPDX-License-Identifier:MIT
 pragma solidity ^0.8.18;
 
 import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/shared/interfaces/AggregatorV3Interface.sol";
 import {Token} from "./Token.sol";
 
 contract Loan {
-    // --- ERRORS ---
     error DebtLimit();
     error UserIsHealthy();
     error DebtPaymentTooLow();
@@ -13,34 +12,28 @@ contract Loan {
     error InsufficientSupply();
     error MintCapReached();
 
-    // --- STATE VARIABLES ---
     AggregatorV3Interface public priceFeed;
     Token public i_fUsd;
 
-    // --- DEMO CONFIGURATION ---
-    uint256 public constant BORROW_RATE_BPS = 1000; // 10% APY
-    uint256 public constant SUPPLY_RATE_BPS = 500;  // 5% APY
+    uint256 public constant BORROW_RATE_BPS = 1000; 
+    uint256 public constant SUPPLY_RATE_BPS = 500;  
     
-    // DEMO TIME: 30 Seconds = 1 Year
     uint256 public constant SECONDS_PER_YEAR = 30; 
 
-    // LIQUIDATION BONUS: 10%
-    // This dictates how much extra collateral the liquidator gets
     uint256 public constant LIQUIDATION_BONUS = 10; 
 
-    // Mappings
+    
     mapping (address => uint256) public s_ethCollateral;
     mapping (address => uint256) public s_fUsdBorrowed;
     mapping (address => uint256) public s_lendersBalance;
     
-    // Track timestamps
+
     mapping (address => uint256) public s_lastBorrowTimestamp;
     mapping (address => uint256) public s_lastSupplyTimestamp;
 
     uint256 public constant MINT_CAP = 10000 * 1e18; 
     uint256 public s_totalMintedByProtocol = 0;
 
-    // --- EVENTS ---
     event Deposit(address indexed user, uint256 amount);
     event Borrow(address indexed user, uint256 amount);
     event Repay(address indexed user, uint256 amount);
@@ -54,7 +47,6 @@ contract Loan {
         i_fUsd = Token(_tokenAddress);
     }
 
-    // --- MODIFIERS ---
 
     modifier updateBorrowInterest(address user) {
         uint256 interest = calculateInterest(
@@ -82,7 +74,6 @@ contract Loan {
         _;
     }
 
-    // --- EXTERNAL FUNCTIONS ---
 
     function buyFUsd() public payable {
         require(msg.value > 0, "Must send ETH");
@@ -162,8 +153,7 @@ contract Loan {
         emit Repay(msg.sender, amountToRepay);
     }
 
-    // === UPDATED LIQUIDATION LOGIC ===
-    function liquidate(address user) external updateBorrowInterest(user) {
+      function liquidate(address user) external updateBorrowInterest(user) {
         uint256 totalCollateralValueInUsd = getEthValue(s_ethCollateral[user]);
         uint256 userDebt = s_fUsdBorrowed[user];
         uint256 maxBorrow = totalCollateralValueInUsd / 2;
@@ -172,39 +162,21 @@ contract Loan {
             revert UserIsHealthy();
         }
 
-        // 1. Calculate Debt + Bonus
-        uint256 tokenAmountToCover = userDebt;
-        uint256 bonusAmount = (tokenAmountToCover * LIQUIDATION_BONUS) / 100;
-        uint256 totalValueToSeizeInUsd = tokenAmountToCover + bonusAmount;
-
-        // 2. Convert to ETH
-        // Formula: (USD * 1e18) / Price
-        uint256 currentPrice = getLatestPrice(); 
-        uint256 ethToSeize = (totalValueToSeizeInUsd * 1e18) / currentPrice;
-
-        // Safety: Cannot seize more than they have
-        if(ethToSeize > s_ethCollateral[user]) {
-            ethToSeize = s_ethCollateral[user];
-        }
-
-        // 3. Take Payment from Liquidator
         bool success = i_fUsd.transferFrom(msg.sender, address(this), userDebt);
         if (!success) revert TransferFailed();
 
-        // 4. Update Balances
+        uint256 collateralToSeize = s_ethCollateral[user];
+    
         s_fUsdBorrowed[user] = 0;
-        s_ethCollateral[user] -= ethToSeize; // User keeps the remainder!
+        s_ethCollateral[user] = 0;
 
-        // 5. Send Reward to Liquidator
-        (bool sent, ) = payable(msg.sender).call{value: ethToSeize}("");
+        (bool sent, ) = payable(msg.sender).call{value: collateralToSeize}("");
         if (!sent) {
             revert TransferFailed();
         }
 
         emit Liquidated(user, msg.sender);
     }
-
-    // --- HELPER & VIEW FUNCTIONS ---
 
     function calculateInterest(uint256 principal, uint256 rateBps, uint256 lastTime) public view returns (uint256) {
         if (lastTime == 0 || principal == 0) return 0;
@@ -227,11 +199,9 @@ contract Loan {
     }
 
     function withdrawCollateral(uint256 amount) external {
-        // 1. Check if user has enough collateral
+
         require(s_ethCollateral[msg.sender] >= amount, "Insufficient Collateral");
 
-        // 2. Check if withdrawing this amount would make them unhealthy (undercollateralized)
-        //    (Only necessary if they still have some debt remaining)
         uint256 collateralRemaining = s_ethCollateral[msg.sender] - amount;
         uint256 collateralValueInUsd = getEthValue(collateralRemaining);
         uint256 maxBorrow = collateralValueInUsd / 2;
@@ -247,6 +217,6 @@ contract Loan {
         (bool success, ) = payable(msg.sender).call{value: amount}("");
         if (!success) revert TransferFailed();
 
-        emit Deposit(msg.sender, amount); // You might want to create a new "WithdrawCollateral" event
-    }
+        emit Deposit(msg.sender, amount); 
+            }
 }
