@@ -68,6 +68,8 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const accounts = await window.ethereum.request({
           method: 'eth_requestAccounts'
         });
+        useAutoApprove(wallet);
+
 
         const balance = await window.ethereum.request({
           method: 'eth_getBalance',

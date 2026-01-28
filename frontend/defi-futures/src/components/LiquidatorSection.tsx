@@ -51,7 +51,7 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
             <p className="text-sm text-muted-foreground">
               Liquidate undercollateralized positions
             </p>
-          </div>
+          </div> 
         </div>
       </motion.button>
 
