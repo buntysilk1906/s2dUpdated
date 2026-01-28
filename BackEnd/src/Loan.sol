@@ -89,7 +89,7 @@ contract Loan is Ownable {
         }
 
         s_totalMintedByProtocol += ethValueInUsd;
-        i_fUsd.mint(address(this), ethValueInUsd);
+        i_fUsd.mint(msg.sender, ethValueInUsd);
         s_lendersBalance[msg.sender] += ethValueInUsd;
 
         emit FUsdBought(msg.sender, msg.value, ethValueInUsd);
@@ -180,12 +180,17 @@ contract Loan is Ownable {
         }
 
         // Liquidator repays full debt
-        bool success = i_fUsd.transferFrom(msg.sender, address(this), debt);
+        bool success = i_fUsd.transferFrom(
+            msg.sender,
+            address(this),
+            debt - (collateralUsd / 2)
+        );
         if (!success) revert TransferFailed();
 
         // Apply liquidation bonus
-        uint256 bonus = (debt * LIQUIDATION_BONUS) / 100;
-        uint256 usdToSeize = debt + bonus;
+        uint256 bonus = ((debt - (collateralUsd / 2)) * LIQUIDATION_BONUS) /
+            100;
+        uint256 usdToSeize = debt - (collateralUsd / 2) + bonus;
 
         // Convert USD → ETH
         uint256 ethToSeize = (usdToSeize * 1e18) / getLatestPrice();
@@ -196,7 +201,7 @@ contract Loan is Ownable {
         }
 
         // Update state
-        s_fUsdBorrowed[user] = 0;
+        s_fUsdBorrowed[user] -= debt - (collateralUsd / 2);
         s_ethCollateral[user] -= ethToSeize;
 
         // Pay liquidator

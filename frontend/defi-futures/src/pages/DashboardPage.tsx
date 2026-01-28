@@ -4,17 +4,17 @@ import { useWallet } from '@/context/WalletContext';
 import { LOAN_CONTRACT_ADDRESS } from '@/lib/constants';
 
 const DashboardPage: React.FC = () => {
-    const { wallet } = useWallet(); 
-    const { 
+    const { wallet } = useWallet();
+    const {
         depositCollateral, borrow, repay, supplyLiquidity, withdrawLiquidity, buyFUsd,
-        getUserStats, getHistory, getProtocolStats, loading 
+        getUserStats, getHistory, getProtocolStats, loading
     } = useLoan();
-    
+
     // UI State
     const [stats, setStats] = useState({ collateral: '0', debt: '0', supply: '0' });
     const [protocolStats, setProtocolStats] = useState({ totalMinted: '0', maxCap: '10000' });
     const [history, setHistory] = useState<any[]>([]);
-    
+
     // Modal State: 'deposit', 'lend', or 'buy'
     const [activeModal, setActiveModal] = useState<'none' | 'deposit' | 'lend' | 'buy'>('none');
     const [subTab, setSubTab] = useState<'action1' | 'action2' | 'action3'>('action1');
@@ -37,7 +37,7 @@ const DashboardPage: React.FC = () => {
     // Handle Transaction Logic
     const handleTransaction = async () => {
         if (!amount) return;
-        
+
         if (activeModal === 'buy') {
             await buyFUsd(amount); // Call the new Buy function
         } else if (activeModal === 'deposit') {
@@ -48,7 +48,7 @@ const DashboardPage: React.FC = () => {
             if (subTab === 'action1') await supplyLiquidity(amount);
             if (subTab === 'action2') await withdrawLiquidity(amount);
         }
-        
+
         setAmount('');
         // Refresh Data
         if (wallet?.address) {
@@ -70,7 +70,7 @@ const DashboardPage: React.FC = () => {
                         <h1 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
                             Your Dashboard
                         </h1>
-                        <p className="text-gray-400 text-sm mt-1">Connected: {wallet?.address?.slice(0,6)}...{wallet?.address?.slice(-4)}</p>
+                        <p className="text-gray-400 text-sm mt-1">Connected: {wallet?.address?.slice(0, 6)}...{wallet?.address?.slice(-4)}</p>
                     </div>
                 </header>
 
@@ -84,33 +84,33 @@ const DashboardPage: React.FC = () => {
 
                 {/* --- MINTING STATION & QUICK ACTIONS --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-                    
+
                     {/* LEFT: Quick Actions */}
                     <div className="lg:col-span-2 space-y-6">
                         <h2 className="text-xl font-semibold">Quick Actions</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
-                            <ActionCard 
-                                title="Deposit ETH" 
-                                desc="Deposit ETH as collateral to borrow fUSD." 
-                                icon="Ξ" 
+                            <ActionCard
+                                title="Deposit ETH"
+                                desc="Deposit ETH as collateral to borrow fUSD."
+                                icon="Ξ"
                                 color="blue"
-                                onClick={() => { setActiveModal('deposit'); setSubTab('action1'); }} 
+                                onClick={() => { setActiveModal('deposit'); setSubTab('action1'); }}
                             />
-                            <ActionCard 
-                                title="Lend fUSD" 
-                                desc="Lend your fUSD to earn competitive interest." 
-                                icon="🐷" 
+                            <ActionCard
+                                title="Lend fUSD"
+                                desc="Lend your fUSD to earn competitive interest."
+                                icon="🐷"
                                 color="green"
-                                onClick={() => { setActiveModal('lend'); setSubTab('action1'); }} 
+                                onClick={() => { setActiveModal('lend'); setSubTab('action1'); }}
                             />
                         </div>
                     </div>
 
                     {/* RIGHT: fUSD Market (Buy + Graph) */}
                     <div className="space-y-6 h-full flex flex-col">
-                         <h2 className="text-xl font-semibold">fUSD Market</h2>
-                         
-                         <div className="bg-[#0f1021] border border-gray-800 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between flex-grow min-h-[320px]">
+                        <h2 className="text-xl font-semibold">fUSD Market</h2>
+
+                        <div className="bg-[#0f1021] border border-gray-800 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between flex-grow min-h-[320px]">
                             {/* Gradient Background */}
                             <div className="absolute top-0 right-0 w-32 h-32 bg-orange-600/10 rounded-full blur-[50px] pointer-events-none"></div>
 
@@ -121,9 +121,9 @@ const DashboardPage: React.FC = () => {
                                     <span className="bg-orange-500/20 text-orange-400 text-xs px-2 py-1 rounded border border-orange-500/30">Stable</span>
                                 </div>
                                 <p className="text-xs text-gray-400 mb-4">Swap ETH directly for fUSD to start lending immediately.</p>
-                                <button 
+                                <button
                                     className="w-full py-3 rounded-xl font-bold text-white shadow-lg bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 transition-all active:scale-95 flex items-center justify-center gap-2"
-                                    onClick={() => setActiveModal('buy')} 
+                                    onClick={() => setActiveModal('buy')}
                                 >
                                     <span>🛒</span> Buy fUSD
                                 </button>
@@ -160,7 +160,7 @@ const DashboardPage: React.FC = () => {
                                     <p className="text-[10px] text-orange-400/80 mt-1">Minted vs Cap</p>
                                 </div>
                             </div>
-                         </div>
+                        </div>
                     </div>
                 </div>
 
@@ -188,11 +188,11 @@ const DashboardPage: React.FC = () => {
             {/* ================= MODAL ================= */}
             {activeModal !== 'none' && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-                     <div className="bg-[#0f1021] w-full max-w-lg p-8 rounded-3xl border border-gray-700 relative shadow-2xl">
-                        
+                    <div className="bg-[#0f1021] w-full max-w-lg p-8 rounded-3xl border border-gray-700 relative shadow-2xl">
+
                         {/* Close Button */}
                         <button onClick={() => setActiveModal('none')} className="absolute top-4 right-4 text-gray-400 hover:text-white">✕</button>
-                        
+
                         {/* Modal Header */}
                         <div className="text-center mb-6">
                             <h2 className="text-2xl font-bold capitalize mb-1">
@@ -202,15 +202,15 @@ const DashboardPage: React.FC = () => {
                                 {activeModal === 'buy' ? 'Swap ETH for fUSD directly.' : 'Manage your position.'}
                             </p>
                         </div>
-                        
+
                         {/* Tabs (Only for Deposit/Lend) */}
                         {activeModal !== 'buy' && (
                             <div className="flex bg-[#1a1b3a] p-1 rounded-lg mb-6">
                                 {(activeModal === 'deposit' ? ['action1', 'action2', 'action3'] : ['action1', 'action2']).map((tab, idx) => (
-                                    <button key={idx} onClick={() => setSubTab(tab as any)} 
+                                    <button key={idx} onClick={() => setSubTab(tab as any)}
                                         className={`flex-1 py-2 text-sm font-bold rounded ${subTab === tab ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-white'}`}>
-                                        {activeModal === 'deposit' 
-                                            ? (idx === 0 ? 'Deposit' : idx === 1 ? 'Borrow' : 'Repay') 
+                                        {activeModal === 'deposit'
+                                            ? (idx === 0 ? 'Deposit' : idx === 1 ? 'Borrow' : 'Repay')
                                             : (idx === 0 ? 'Lend' : 'Withdraw')}
                                     </button>
                                 ))}
@@ -219,34 +219,34 @@ const DashboardPage: React.FC = () => {
 
                         {/* Input Field */}
                         <div className="mb-6">
-                             <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">
+                            <label className="text-xs text-gray-400 uppercase font-bold mb-2 block">
                                 {activeModal === 'buy' ? 'Pay Amount (ETH)' : 'Amount'}
-                             </label>
-                             <div className="bg-[#12132b] border border-gray-700 rounded-xl p-4 flex justify-between items-center">
-                                <input 
-                                    type="number" 
-                                    placeholder="0.00" 
-                                    value={amount} 
-                                    onChange={e => setAmount(e.target.value)} 
+                            </label>
+                            <div className="bg-[#12132b] border border-gray-700 rounded-xl p-4 flex justify-between items-center">
+                                <input
+                                    type="number"
+                                    placeholder="0.00"
+                                    value={amount}
+                                    onChange={e => setAmount(e.target.value)}
                                     className="bg-transparent text-2xl font-bold text-white outline-none w-full"
                                 />
                                 <span className="font-bold text-gray-500 ml-2">
-                                    {activeModal === 'deposit' && subTab === 'action1' ? 'ETH' : 
-                                     activeModal === 'buy' ? 'ETH' : 'fUSD'}
+                                    {activeModal === 'deposit' && subTab === 'action1' ? 'ETH' :
+                                        activeModal === 'buy' ? 'ETH' : 'fUSD'}
                                 </span>
-                             </div>
+                            </div>
                         </div>
 
                         {/* Confirm Button */}
-                        <button 
-                            onClick={handleTransaction} 
+                        <button
+                            onClick={handleTransaction}
                             disabled={loading}
                             className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-transform active:scale-95 disabled:opacity-50
                                 ${activeModal === 'buy' ? 'bg-gradient-to-r from-orange-600 to-amber-500' : 'bg-blue-600 hover:bg-blue-500'}`}
                         >
                             {loading ? 'Processing...' : 'Confirm Transaction'}
                         </button>
-                     </div>
+                    </div>
                 </div>
             )}
         </div>
