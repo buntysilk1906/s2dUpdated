@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, X, Search, DollarSign } from 'lucide-react';
+import { AlertTriangle, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useLoan } from '@/hooks/useLoan'; // ✅ ADD THIS
+import { useLoan } from '@/hooks/useLoan';
 
 interface LiquidatorSectionProps {
   walletAddress: string;
@@ -13,10 +13,8 @@ interface LiquidatorSectionProps {
 const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [targetAddress, setTargetAddress] = useState('');
-  const [amount, setAmount] = useState('');
   const { toast } = useToast();
 
-  // ✅ GET LIQUIDATE FUNCTION
   const { liquidate, loading } = useLoan();
 
   const handleLiquidate = async () => {
@@ -39,7 +37,6 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
 
       setIsOpen(false);
       setTargetAddress('');
-      setAmount('');
     } catch (err) {
       toast({
         title: "Liquidation Failed",
@@ -117,23 +114,6 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
                       placeholder="0x..."
                       value={targetAddress}
                       onChange={(e) => setTargetAddress(e.target.value)}
-                      className="pl-10 bg-muted/50 border-primary/20 focus:border-primary"
-                    />
-                  </div>
-                </div>
-
-                {/* Amount kept intentionally (even though contract doesn’t need it) */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Amount to Liquidate
-                  </label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="number"
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
                       className="pl-10 bg-muted/50 border-primary/20 focus:border-primary"
                     />
                   </div>

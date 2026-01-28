@@ -3,10 +3,17 @@ import { ethers, BrowserProvider, Contract } from 'ethers';
 import { useWallet } from '@/context/WalletContext';
 import { LOAN_CONTRACT_ADDRESS, LOAN_CONTRACT_ABI } from '@/lib/constants';
 
+const safeFormatEther = (value: any) => {
+    try {
+        return ethers.formatEther(value ?? 0);
+    } catch {
+        return "0";
+    }
+};
+
 export const useLoan = () => {
     const { wallet } = useWallet();
     const [loading, setLoading] = useState(false);
-
 
     const getContract = async (withSigner = false) => {
         if (!window.ethereum) throw new Error("No crypto wallet found");
@@ -18,6 +25,7 @@ export const useLoan = () => {
         return new Contract(LOAN_CONTRACT_ADDRESS, LOAN_CONTRACT_ABI, provider);
     };
 
+    // ================= WRITE FUNCTIONS =================
 
     const depositCollateral = async (amount: string) => {
         setLoading(true);
@@ -26,20 +34,27 @@ export const useLoan = () => {
             const tx = await contract.depositCollateral({ value: ethers.parseEther(amount) });
             await tx.wait();
             alert("Deposit Successful!");
-        } catch (err) { console.error(err); alert("Deposit Failed"); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+            alert("Deposit Failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const buyFUsd = async (ethAmount: string) => {
         setLoading(true);
         try {
             const contract = await getContract(true);
-            // calculated fUSD amount is handled by contract logic, we just send ETH
             const tx = await contract.buyFUsd({ value: ethers.parseEther(ethAmount) });
             await tx.wait();
             alert("fUSD Bought Successfully!");
-        } catch (err) { console.error(err); alert("Buy Failed"); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+            alert("Buy Failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const borrow = async (amount: string) => {
@@ -49,8 +64,12 @@ export const useLoan = () => {
             const tx = await contract.borrow(ethers.parseEther(amount));
             await tx.wait();
             alert("Borrow Successful!");
-        } catch (err) { console.error(err); alert("Borrow Failed"); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+            alert("Borrow Failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const repay = async (amount: string) => {
@@ -60,8 +79,12 @@ export const useLoan = () => {
             const tx = await contract.repay(ethers.parseEther(amount));
             await tx.wait();
             alert("Repay Successful!");
-        } catch (err) { console.error(err); alert("Repay Failed"); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+            alert("Repay Failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const supplyLiquidity = async (amount: string) => {
@@ -71,8 +94,12 @@ export const useLoan = () => {
             const tx = await contract.supply(ethers.parseEther(amount));
             await tx.wait();
             alert("Supply Successful!");
-        } catch (err) { console.error(err); alert("Supply Failed"); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+            alert("Supply Failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const withdrawLiquidity = async (amount: string) => {
@@ -82,8 +109,12 @@ export const useLoan = () => {
             const tx = await contract.withdrawSupply(ethers.parseEther(amount));
             await tx.wait();
             alert("Withdraw Successful!");
-        } catch (err) { console.error(err); alert("Withdraw Failed"); }
-        finally { setLoading(false); }
+        } catch (err) {
+            console.error(err);
+            alert("Withdraw Failed");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const liquidate = async (user: string) => {
@@ -101,23 +132,22 @@ export const useLoan = () => {
         }
     };
 
+    // ================= READ FUNCTIONS =================
 
     const getProtocolStats = async () => {
         try {
             const contract = await getContract(false);
-            // Fetch total minted and mint cap from contract
             const [minted, cap] = await Promise.all([
                 contract.s_totalMintedByProtocol(),
                 contract.MINT_CAP()
             ]);
 
             return {
-                totalMinted: ethers.formatEther(minted),
-                maxCap: ethers.formatEther(cap)
+                totalMinted: safeFormatEther(minted),
+                maxCap: safeFormatEther(cap)
             };
         } catch (error) {
             console.error("Protocol Stats Error:", error);
-            // Fallback values if read fails
             return { totalMinted: "0", maxCap: "10000" };
         }
     };
@@ -125,23 +155,42 @@ export const useLoan = () => {
     const getUserStats = async (userAddress: string) => {
         try {
             const contract = await getContract(false);
+
             const [col, debt, supplyBal] = await Promise.all([
                 contract.s_ethCollateral(userAddress),
                 contract.s_fUsdBorrowed(userAddress),
                 contract.s_lendersBalance(userAddress)
             ]);
+
+            const collateral = safeFormatEther(col);
+            const borrowed = safeFormatEther(debt);
+            const supply = safeFormatEther(supplyBal);
+
+            // Derived health factor (basic version)
+            const healthFactor =
+                parseFloat(borrowed) > 0
+                    ? (parseFloat(collateral) * 0.8) / parseFloat(borrowed)
+                    : Infinity;
+
             return {
-                collateral: ethers.formatEther(col),
-                debt: ethers.formatEther(debt),
-                supply: ethers.formatEther(supplyBal)
+                collateral,
+                debt: borrowed,
+                supply,
+                healthFactor: healthFactor === Infinity ? "∞" : healthFactor.toFixed(2)
             };
         } catch (error) {
             console.error("Stats Error:", error);
-            return { collateral: "0", debt: "0", supply: "0" };
+            return {
+                collateral: "0",
+                debt: "0",
+                supply: "0",
+                healthFactor: "∞"
+            };
         }
     };
 
-    // --- HISTORY FUNCTION ---
+    // ================= HISTORY =================
+
     const getHistory = async (userAddress: string) => {
         try {
             const contract = await getContract(false);
@@ -161,7 +210,7 @@ export const useLoan = () => {
             const formatLog = (logs: any[], type: string, token: string) =>
                 logs.map(log => ({
                     type,
-                    amount: ethers.formatEther(log.args[1]),
+                    amount: safeFormatEther(log.args[1]),
                     token,
                     hash: log.transactionHash,
                     block: log.blockNumber
@@ -175,7 +224,6 @@ export const useLoan = () => {
             ];
 
             return allEvents.sort((a, b) => b.block - a.block);
-
         } catch (error) {
             console.error("History Error:", error);
             return [];
