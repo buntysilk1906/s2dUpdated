@@ -1,659 +1,659 @@
 [
   {
-    "type": "constructor",
     "inputs": [
       {
+        "internalType": "address",
         "name": "_tokenAddress",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
     ],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "constructor"
   },
   {
+    "inputs": [],
     "name": "DebtLimit",
-    "type": "error",
-    "inputs": []
+    "type": "error"
   },
   {
+    "inputs": [],
     "name": "DebtPaymentTooLow",
-    "type": "error",
-    "inputs": []
+    "type": "error"
   },
   {
+    "inputs": [],
     "name": "InsufficientSupply",
-    "type": "error",
-    "inputs": []
+    "type": "error"
   },
   {
+    "inputs": [],
     "name": "MintCapReached",
-    "type": "error",
-    "inputs": []
+    "type": "error"
   },
   {
-    "name": "OwnableInvalidOwner",
-    "type": "error",
     "inputs": [
       {
+        "internalType": "address",
         "name": "owner",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
   },
   {
-    "name": "OwnableUnauthorizedAccount",
-    "type": "error",
     "inputs": [
       {
+        "internalType": "address",
         "name": "account",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
-    ]
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
   },
   {
+    "inputs": [],
     "name": "TransferFailed",
-    "type": "error",
-    "inputs": []
+    "type": "error"
   },
   {
+    "inputs": [],
     "name": "UserIsHealthy",
-    "type": "error",
-    "inputs": []
+    "type": "error"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "Borrow",
-    "type": "event",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "Deposit",
-    "type": "event",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
-    "name": "FUsdBought",
-    "type": "event",
+    "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
         "name": "buyer",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        "type": "address"
       },
       {
-        "name": "ethAmount",
-        "type": "uint256",
         "indexed": false,
-        "internalType": "uint256"
+        "internalType": "uint256",
+        "name": "ethAmount",
+        "type": "uint256"
       },
       {
+        "indexed": false,
+        "internalType": "uint256",
         "name": "fUsdAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "anonymous": false
+    "name": "FUsdBought",
+    "type": "event"
   },
   {
-    "name": "Liquidated",
-    "type": "event",
+    "anonymous": false,
     "inputs": [
       {
-        "name": "user",
-        "type": "address",
         "indexed": true,
-        "internalType": "address"
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
+        "indexed": true,
+        "internalType": "address",
         "name": "liquidator",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        "type": "address"
       }
     ],
-    "anonymous": false
+    "name": "Liquidated",
+    "type": "event"
   },
   {
-    "name": "OwnershipTransferred",
-    "type": "event",
+    "anonymous": false,
     "inputs": [
       {
+        "indexed": true,
+        "internalType": "address",
         "name": "previousOwner",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        "type": "address"
       },
       {
-        "name": "newOwner",
-        "type": "address",
         "indexed": true,
-        "internalType": "address"
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
       }
     ],
-    "anonymous": false
+    "name": "OwnershipTransferred",
+    "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "Repay",
-    "type": "event",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "lender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "Supply",
-    "type": "event",
-    "inputs": [
-      {
-        "name": "lender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "lender",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "WithdrawSupply",
-    "type": "event",
-    "inputs": [
-      {
-        "name": "lender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "withdrawCollateral_money",
-    "type": "event",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
+    "type": "event"
   },
   {
+    "inputs": [],
     "name": "BORROW_RATE_BPS",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "LIQUIDATION_BONUS",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "MINT_CAP",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "SECONDS_PER_YEAR",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "SUPPLY_RATE_BPS",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "name": "borrow",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "uint256",
         "name": "amountToBorrow",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
+    "name": "borrow",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "buyFUsd",
-    "type": "function",
-    "inputs": [],
     "outputs": [],
-    "stateMutability": "payable"
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-    "name": "calculateInterest",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "uint256",
         "name": "principal",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       },
       {
+        "internalType": "uint256",
         "name": "rateBps",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       },
       {
+        "internalType": "uint256",
         "name": "lastTime",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
+    "name": "calculateInterest",
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "depositCollateral",
-    "type": "function",
-    "inputs": [],
     "outputs": [],
-    "stateMutability": "payable"
+    "stateMutability": "payable",
+    "type": "function"
   },
   {
-    "name": "getEthValue",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "uint256",
         "name": "ethAmount",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
+    "name": "getEthValue",
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "getLatestPrice",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
     "name": "getSecondsElapsed",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "i_fUsd",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "contract Token",
         "name": "",
-        "type": "address",
-        "internalType": "contract Token"
+        "type": "address"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "name": "liquidate",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "address",
         "name": "user",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
     ],
+    "name": "liquidate",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "owner",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "address",
         "name": "",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "priceFeed",
-    "type": "function",
-    "inputs": [],
     "outputs": [
       {
+        "internalType": "contract AggregatorV3Interface",
         "name": "",
-        "type": "address",
-        "internalType": "contract MockV3Aggregator"
+        "type": "address"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [],
     "name": "renounceOwnership",
-    "type": "function",
-    "inputs": [],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    "name": "repay",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "uint256",
         "name": "amountToRepay",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
+    "name": "repay",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "name": "s_ethCollateral",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "name": "s_fUsdBorrowed",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "name": "s_lastBorrowTimestamp",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "name": "s_lastSupplyTimestamp",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "name": "s_lendersBalance",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "name": "s_totalMintedByProtocol",
-    "type": "function",
     "inputs": [],
+    "name": "s_totalMintedByProtocol",
     "outputs": [
       {
+        "internalType": "uint256",
         "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
-    "stateMutability": "view"
+    "stateMutability": "view",
+    "type": "function"
   },
   {
-    "name": "setPriceFeed",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "contract AggregatorV3Interface",
         "name": "_pricefeed",
-        "type": "address",
-        "internalType": "contract MockV3Aggregator"
+        "type": "address"
       }
     ],
+    "name": "setPriceFeed",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "supply",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    "name": "transferOwnership",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "address",
         "name": "newOwner",
-        "type": "address",
-        "internalType": "address"
+        "type": "address"
       }
     ],
+    "name": "transferOwnership",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
     "name": "withdrawCollateral",
-    "type": "function",
-    "inputs": [
-      {
-        "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   },
   {
-    "name": "withdrawSupply",
-    "type": "function",
     "inputs": [
       {
+        "internalType": "uint256",
         "name": "amount",
-        "type": "uint256",
-        "internalType": "uint256"
+        "type": "uint256"
       }
     ],
+    "name": "withdrawSupply",
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ]

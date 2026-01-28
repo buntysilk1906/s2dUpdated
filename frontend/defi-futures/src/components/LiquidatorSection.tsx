@@ -4,6 +4,7 @@ import { AlertTriangle, X, Search, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useLoan } from '@/hooks/useLoan'; // ✅ ADD THIS
 
 interface LiquidatorSectionProps {
   walletAddress: string;
@@ -15,23 +16,37 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
   const [amount, setAmount] = useState('');
   const { toast } = useToast();
 
-  const handleLiquidate = () => {
-    if (!targetAddress || !amount) {
+  // ✅ GET LIQUIDATE FUNCTION
+  const { liquidate, loading } = useLoan();
+
+  const handleLiquidate = async () => {
+    if (!targetAddress) {
       toast({
         title: "Missing Information",
-        description: "Please enter both address and amount",
+        description: "Please enter a target address",
         variant: "destructive",
       });
       return;
     }
 
-    toast({
-      title: "Liquidation Initiated",
-      description: `Processing liquidation for ${targetAddress.slice(0, 10)}...`,
-    });
-    setIsOpen(false);
-    setTargetAddress('');
-    setAmount('');
+    try {
+      await liquidate(targetAddress);
+
+      toast({
+        title: "Liquidation Successful",
+        description: `User ${targetAddress.slice(0, 10)} liquidated`,
+      });
+
+      setIsOpen(false);
+      setTargetAddress('');
+      setAmount('');
+    } catch (err) {
+      toast({
+        title: "Liquidation Failed",
+        description: "User may be healthy or transaction reverted",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -51,7 +66,7 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
             <p className="text-sm text-muted-foreground">
               Liquidate undercollateralized positions
             </p>
-          </div> 
+          </div>
         </div>
       </motion.button>
 
@@ -107,6 +122,7 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
                   </div>
                 </div>
 
+                {/* Amount kept intentionally (even though contract doesn’t need it) */}
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Amount to Liquidate
@@ -125,15 +141,20 @@ const LiquidatorSection: React.FC<LiquidatorSectionProps> = ({ walletAddress }) 
 
                 <div className="glass-card p-4 bg-muted/30">
                   <p className="text-sm text-muted-foreground mb-2">Your Wallet</p>
-                  <p className="font-mono text-primary text-sm break-all">{walletAddress}</p>
+                  <p className="font-mono text-primary text-sm break-all">
+                    {walletAddress}
+                  </p>
                 </div>
 
                 <Button
                   onClick={handleLiquidate}
+                  disabled={loading}
                   className="action-button w-full text-primary-foreground"
                   size="lg"
                 >
-                  <span>Execute Liquidation</span>
+                  <span>
+                    {loading ? "Processing..." : "Execute Liquidation"}
+                  </span>
                 </Button>
               </div>
             </motion.div>

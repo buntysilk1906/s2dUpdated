@@ -86,6 +86,21 @@ export const useLoan = () => {
         finally { setLoading(false); }
     };
 
+    const liquidate = async (user: string) => {
+        setLoading(true);
+        try {
+            const contract = await getContract(true);
+            const tx = await contract.liquidate(user);
+            await tx.wait();
+            alert("Liquidation successful!");
+        } catch (err) {
+            console.error(err);
+            alert("Liquidation failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const getProtocolStats = async () => {
         try {
@@ -174,6 +189,7 @@ export const useLoan = () => {
         supplyLiquidity,
         withdrawLiquidity,
         buyFUsd,
+        liquidate,
         getUserStats,
         getHistory,
         getProtocolStats,

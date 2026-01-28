@@ -2,10 +2,10 @@
 import LOAN_ABI from './abi.json';
 
 // REPLACE THIS with your actual deployed contract address (starts with 0x...)
-export const LOAN_CONTRACT_ADDRESS = "0xf184d02Bdb765638e7b52Afb1E0B8B9b827CE644";
+export const LOAN_CONTRACT_ADDRESS = "0x0946b61Ee0534702da91aF392AD315B76Dd905a9";
 export const LOAN_CONTRACT_ABI = LOAN_ABI;
-export const MOCK_ADDRESS = "0x6740A8d50C753B72Ae37a039D7138fA33647d3E2";
-export const TOKEN_ADDRESS = "0x600C5D014e11A2481DB4890a64679171bdefc992"
+export const MOCK_ADDRESS = "0x2bFE32cDBDdf9ACA5B2f9262eb87149C620AeDA0";
+export const TOKEN_ADDRESS = "0x630A22FF248E25090Bc42C7fB36d875AfC73e4d8"
 export const MOCK_ABI = [
     {
         "type": "constructor",
