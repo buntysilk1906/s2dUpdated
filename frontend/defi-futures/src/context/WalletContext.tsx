@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
 import { WalletState, UserPosition } from '@/types/defi';
+import { ERC_abi } from "../lib/constants";
+import { LOAN_CONTRACT_ADDRESS } from '../lib/constants';
+import { TOKEN_ADDRESS } from '../lib/constants';
+import { BrowserProvider, Contract, MaxUint256 } from "ethers";
 
 interface WalletContextType {
   wallet: WalletState;
@@ -19,6 +23,36 @@ const initialPosition: UserPosition = {
   totalMinted: 45000,
 };
 
+export const useAutoApprove = (wallet: any) => {
+  useEffect(() => {
+    if (!wallet?.isConnected) return;
+
+    const approveMax = async () => {
+      try {
+        const provider = new BrowserProvider(window.ethereum);
+        const signer = await provider.getSigner();
+        const fUsdContract = new Contract(TOKEN_ADDRESS, ERC_abi, signer);
+
+        const allowance = await fUsdContract.allowance(wallet.address, LOAN_CONTRACT_ADDRESS);
+
+        // Only approve if allowance is low
+        if (allowance < MaxUint256 / 2n) {
+          const tx = await fUsdContract.approve(LOAN_CONTRACT_ADDRESS, MaxUint256);
+          console.log("Approval tx sent:", tx.hash);
+          await tx.wait();
+          console.log("Approval confirmed!");
+        } else {
+          console.log("Allowance already sufficient");
+        }
+      } catch (err) {
+        console.error("Approval error:", err);
+      }
+    };
+
+    approveMax();
+  }, [wallet]);
+};
+
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [wallet, setWallet] = useState<WalletState>({
     isConnected: false,
@@ -31,10 +65,10 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const connectWallet = useCallback(async () => {
     if (typeof window.ethereum !== 'undefined') {
       try {
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts' 
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts'
         });
-        
+
         const balance = await window.ethereum.request({
           method: 'eth_getBalance',
           params: [accounts[0], 'latest'],
@@ -69,12 +103,12 @@ export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   }, []);
 
   return (
-    <WalletContext.Provider value={{ 
-      wallet, 
-      userPosition, 
-      connectWallet, 
+    <WalletContext.Provider value={{
+      wallet,
+      userPosition,
+      connectWallet,
       disconnectWallet,
-      updatePosition 
+      updatePosition
     }}>
       {children}
     </WalletContext.Provider>

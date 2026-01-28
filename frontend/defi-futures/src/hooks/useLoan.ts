@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { ethers, BrowserProvider, Contract } from 'ethers';
-import { useWallet } from '@/context/WalletContext'; 
+import { useWallet } from '@/context/WalletContext';
 import { LOAN_CONTRACT_ADDRESS, LOAN_CONTRACT_ABI } from '@/lib/constants';
 
 export const useLoan = () => {
-    const { wallet } = useWallet(); 
+    const { wallet } = useWallet();
     const [loading, setLoading] = useState(false);
 
-    
+
     const getContract = async (withSigner = false) => {
         if (!window.ethereum) throw new Error("No crypto wallet found");
         const provider = new BrowserProvider(window.ethereum);
@@ -18,7 +18,7 @@ export const useLoan = () => {
         return new Contract(LOAN_CONTRACT_ADDRESS, LOAN_CONTRACT_ABI, provider);
     };
 
-    
+
     const depositCollateral = async (amount: string) => {
         setLoading(true);
         try {
@@ -26,7 +26,7 @@ export const useLoan = () => {
             const tx = await contract.depositCollateral({ value: ethers.parseEther(amount) });
             await tx.wait();
             alert("Deposit Successful!");
-        } catch (err) { console.error(err); alert("Deposit Failed"); } 
+        } catch (err) { console.error(err); alert("Deposit Failed"); }
         finally { setLoading(false); }
     };
 
@@ -38,7 +38,7 @@ export const useLoan = () => {
             const tx = await contract.buyFUsd({ value: ethers.parseEther(ethAmount) });
             await tx.wait();
             alert("fUSD Bought Successfully!");
-        } catch (err) { console.error(err); alert("Buy Failed"); } 
+        } catch (err) { console.error(err); alert("Buy Failed"); }
         finally { setLoading(false); }
     };
 
@@ -49,7 +49,7 @@ export const useLoan = () => {
             const tx = await contract.borrow(ethers.parseEther(amount));
             await tx.wait();
             alert("Borrow Successful!");
-        } catch (err) { console.error(err); alert("Borrow Failed"); } 
+        } catch (err) { console.error(err); alert("Borrow Failed"); }
         finally { setLoading(false); }
     };
 
@@ -60,7 +60,7 @@ export const useLoan = () => {
             const tx = await contract.repay(ethers.parseEther(amount));
             await tx.wait();
             alert("Repay Successful!");
-        } catch (err) { console.error(err); alert("Repay Failed"); } 
+        } catch (err) { console.error(err); alert("Repay Failed"); }
         finally { setLoading(false); }
     };
 
@@ -71,7 +71,7 @@ export const useLoan = () => {
             const tx = await contract.supply(ethers.parseEther(amount));
             await tx.wait();
             alert("Supply Successful!");
-        } catch (err) { console.error(err); alert("Supply Failed"); } 
+        } catch (err) { console.error(err); alert("Supply Failed"); }
         finally { setLoading(false); }
     };
 
@@ -82,11 +82,11 @@ export const useLoan = () => {
             const tx = await contract.withdrawSupply(ethers.parseEther(amount));
             await tx.wait();
             alert("Withdraw Successful!");
-        } catch (err) { console.error(err); alert("Withdraw Failed"); } 
+        } catch (err) { console.error(err); alert("Withdraw Failed"); }
         finally { setLoading(false); }
     };
 
-    
+
     const getProtocolStats = async () => {
         try {
             const contract = await getContract(false);
@@ -95,15 +95,15 @@ export const useLoan = () => {
                 contract.s_totalMintedByProtocol(),
                 contract.MINT_CAP()
             ]);
-            
+
             return {
-                totalMinted: ethers.formatEther(minted), 
+                totalMinted: ethers.formatEther(minted),
                 maxCap: ethers.formatEther(cap)
             };
         } catch (error) {
             console.error("Protocol Stats Error:", error);
             // Fallback values if read fails
-            return { totalMinted: "0", maxCap: "10000" }; 
+            return { totalMinted: "0", maxCap: "10000" };
         }
     };
 
@@ -130,20 +130,20 @@ export const useLoan = () => {
     const getHistory = async (userAddress: string) => {
         try {
             const contract = await getContract(false);
-            
+
             const depositFilter = contract.filters.Deposit(userAddress);
             const borrowFilter = contract.filters.Borrow(userAddress);
             const repayFilter = contract.filters.Repay(userAddress);
             const supplyFilter = contract.filters.Supply(userAddress);
-            
+
             const [deposits, borrows, repays, supplies] = await Promise.all([
-                contract.queryFilter(depositFilter, -10000), 
+                contract.queryFilter(depositFilter, -10000),
                 contract.queryFilter(borrowFilter, -10000),
                 contract.queryFilter(repayFilter, -10000),
                 contract.queryFilter(supplyFilter, -10000)
             ]);
 
-            const formatLog = (logs: any[], type: string, token: string) => 
+            const formatLog = (logs: any[], type: string, token: string) =>
                 logs.map(log => ({
                     type,
                     amount: ethers.formatEther(log.args[1]),
@@ -167,16 +167,16 @@ export const useLoan = () => {
         }
     };
 
-    return { 
-        depositCollateral, 
-        borrow, 
-        repay, 
-        supplyLiquidity, 
+    return {
+        depositCollateral,
+        borrow,
+        repay,
+        supplyLiquidity,
         withdrawLiquidity,
-        buyFUsd,           
-        getUserStats, 
-        getHistory, 
-        getProtocolStats,  
-        loading 
+        buyFUsd,
+        getUserStats,
+        getHistory,
+        getProtocolStats,
+        loading
     };
 };
