@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useLoan } from '@/hooks/useLoan';
 import { useWallet } from '@/context/WalletContext';
 import { LOAN_CONTRACT_ADDRESS } from '@/lib/constants';
+import { useOracle } from "@/hooks/useOracle";
+
 
 const DashboardPage: React.FC = () => {
     const { wallet } = useWallet();
@@ -10,10 +12,22 @@ const DashboardPage: React.FC = () => {
         getUserStats, getHistory, getProtocolStats, loading
     } = useLoan();
 
+    const { crashPrice } = useOracle()
+
     // UI State
-    const [stats, setStats] = useState({ collateral: '0', debt: '0', supply: '0' });
+    const [stats, setStats] = useState({
+        collateral: '0',
+        debt: '0',
+        supply: '0',
+        healthFactor: '∞'
+    });
+
     const [protocolStats, setProtocolStats] = useState({ totalMinted: '0', maxCap: '10000' });
     const [history, setHistory] = useState<any[]>([]);
+
+    const [newPrice, setNewPrice] = useState('');
+    const [updatingPrice, setUpdatingPrice] = useState(false);
+
 
     // Modal State: 'deposit', 'lend', or 'buy'
     const [activeModal, setActiveModal] = useState<'none' | 'deposit' | 'lend' | 'buy'>('none');
@@ -34,6 +48,27 @@ const DashboardPage: React.FC = () => {
     const capVal = parseFloat(protocolStats.maxCap);
     const percentage = capVal > 0 ? Math.min((mintedVal / capVal) * 100, 100) : 0;
 
+    const handleCrashPrice = async () => {
+        if (!newPrice) return;
+
+        try {
+            setUpdatingPrice(true);
+
+            // newPrice is entered in USD (e.g. 200)
+            // useOracle handles formatting & calling updateAnswer
+            await crashPrice(newPrice);
+
+            setNewPrice('');
+        } catch (err) {
+            console.error('Oracle update failed:', err);
+        } finally {
+            setUpdatingPrice(false);
+        }
+    };
+
+
+
+
     // Handle Transaction Logic
     const handleTransaction = async () => {
         if (!amount) return;
@@ -49,13 +84,22 @@ const DashboardPage: React.FC = () => {
             if (subTab === 'action2') await withdrawLiquidity(amount);
         }
 
+
         setAmount('');
         // Refresh Data
         if (wallet?.address) {
             getHistory(wallet.address).then(setHistory);
             getProtocolStats().then(setProtocolStats);
         }
+
+        if (wallet?.address) {
+            await getUserStats(wallet.address).then(setStats);
+            await getHistory(wallet.address).then(setHistory);
+            await getProtocolStats().then(setProtocolStats);
+        }
     };
+
+
 
     return (
         <div className="min-h-screen bg-[#050511] text-white font-sans relative overflow-hidden">
@@ -76,11 +120,70 @@ const DashboardPage: React.FC = () => {
 
                 {/* Stats Row */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <StatCard label="Collateral Deposit" value={`${parseFloat(stats.collateral).toFixed(2)} ETH`} icon="🟣" trend="+5.2%" />
-                    <StatCard label="Borrowed Amount" value={`${parseFloat(stats.debt).toFixed(0)} fUSD`} icon="🔴" trend="-2.1%" />
-                    <StatCard label="Supply Balance" value={`${parseFloat(stats.supply).toFixed(0)} fUSD`} icon="🟢" trend="+12.3%" />
-                    <StatCard label="Health Factor" value={parseFloat(stats.debt) > 0 ? "1.85" : "∞"} icon="⚡" trend="Safe" />
+                    <StatCard
+                        label="Collateral Deposit"
+                        value={`${Number(stats.collateral).toFixed(9)} ETH`}
+                        icon="🟣"
+                        trend="+5.2%"
+                    />
+
+                    <StatCard
+                        label="Borrowed Amount"
+                        value={`${Number(stats.debt).toFixed(3)} fUSD`}
+                        icon="🔴"
+                        trend="-2.1%"
+                    />
+
+                    <StatCard
+                        label="Supply Balance"
+                        value={`${Number(stats.supply).toFixed(9)} fUSD`}
+                        icon="🟢"
+                        trend="+12.3%"
+                    />
+
+                    <StatCard
+                        label="Health Factor"
+                        value={stats.healthFactor}
+                        icon="⚡"
+                        trend={
+                            stats.healthFactor === "∞"
+                                ? "Safe"
+                                : Number(stats.healthFactor) < 1
+                                    ? "Danger"
+                                    : "Safe"
+                        }
+                    />
                 </div>
+
+                {/* ===== ORACLE PRICE CONTROL (DEMO / OWNER) ===== */}
+                <div className="mt-10 bg-[#1a0f0f] border border-red-700 rounded-2xl p-6">
+                    <h2 className="text-lg font-bold text-red-400 mb-2">
+                        ⚠ Oracle Price Control (Demo)
+                    </h2>
+
+                    <p className="text-xs text-red-300 mb-4">
+                        Manually update ETH price (Mock Aggregator) to test liquidations.
+                    </p>
+
+                    <div className="flex items-center gap-4">
+                        <input
+                            type="number"
+                            placeholder="ETH Price (USD)"
+                            value={newPrice}
+                            onChange={(e) => setNewPrice(e.target.value)}
+                            className="bg-[#0f1021] border border-red-600 rounded-lg px-4 py-2 text-white w-56 outline-none"
+                        />
+
+                        <button
+                            onClick={handleCrashPrice}
+                            disabled={updatingPrice}
+                            className="bg-red-600 hover:bg-red-500 px-6 py-2 rounded-lg font-bold disabled:opacity-50 transition"
+                        >
+                            {updatingPrice ? 'Updating...' : 'Crash Price'}
+                        </button>
+                    </div>
+                </div>
+
 
                 {/* --- MINTING STATION & QUICK ACTIONS --- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
