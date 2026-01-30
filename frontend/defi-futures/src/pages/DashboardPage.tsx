@@ -136,7 +136,7 @@ const DashboardPage: React.FC = () => {
 
                     <StatCard
                         label="Supply Balance"
-                        value={`${Number(stats.supply).toFixed(9)} fUSD`}
+                        value={`${Number(stats.supply).toFixed(5)} fUSD`}
                         icon="🟢"
                         trend="+12.3%"
                     />
@@ -154,7 +154,6 @@ const DashboardPage: React.FC = () => {
                         }
                     />
                 </div>
-
                 {/* ===== ORACLE PRICE CONTROL (DEMO / OWNER) ===== */}
                 <div className="mt-10 bg-[#1a0f0f] border border-red-700 rounded-2xl p-6">
                     <h2 className="text-lg font-bold text-red-400 mb-2">
